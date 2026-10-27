@@ -1,0 +1,12 @@
+services:
+  extractor:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file: .env          # OPENAI_API_KEY lives here, never in the image
+    volumes:
+      - ./dlq:/app/dlq      # keep dead-letter records on the host for review
+  tests:
+    build: .
+    command: ["uv", "run", "--no-dev", "pytest", "-v"]
+    profiles: ["test"]

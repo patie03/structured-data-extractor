@@ -1,0 +1,33 @@
+[project]
+name = "structured-data-extractor"
+version = "0.1.0"
+description = "Fault-tolerant LLM invoice extraction into strictly validated Pydantic v2 models, with reflection repair and a dead-letter queue"
+readme = "README.md"
+authors = [{ name = "Patience Kalanga" }]
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "fastapi>=0.115",
+    "instructor>=1.7",
+    "json-repair>=0.30",
+    "openai>=1.60",
+    "pydantic>=2.9",
+    "pypdf>=5.0",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "python-dotenv>=1.0",
+    "streamlit>=1.40",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = ["reportlab>=4.2"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["live: calls the real OpenAI API (costs a fraction of a cent)"]
+addopts = "-m 'not live'"
