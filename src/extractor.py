@@ -158,7 +158,7 @@ class OpenAIBackend:
     def __init__(self, model: str = DEFAULT_MODEL, api_key: Optional[str] = None):
         from openai import OpenAI  # imported lazily so tests don't need the package configured
 
-        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        self.client = OpenAI(api_key=(api_key or os.getenv("OPENAI_API_KEY") or "").strip())
         self.model = model
         self.response_format = {
             "type": "json_schema",
