@@ -164,11 +164,26 @@ class OpenAIBackend:
             "type": "json_schema",
             "json_schema": {"name": "InvoiceExtraction", "strict": True, "schema": strict_json_schema(InvoiceExtraction)},
         }
+        self.mode = "json_schema_strict"
 
     def __call__(self, messages: list[dict[str, str]]) -> LLMResponse:
-        resp = self.client.chat.completions.create(
-            model=self.model, messages=messages, response_format=self.response_format, temperature=0
-        )
+        from openai import BadRequestError
+
+        try:
+            resp = self.client.chat.completions.create(
+                model=self.model, messages=messages, response_format=self.response_format, temperature=0
+            )
+        except BadRequestError as exc:
+            if self.mode != "json_schema_strict" or "schema" not in str(exc).lower():
+                raise
+            # Older models don't support strict schemas: degrade to JSON mode and let
+            # Pydantic + the reflection loop do the enforcement instead.
+            self.mode, self.response_format = "json_object", {"type": "json_object"}
+            schema_hint = json.dumps(strict_json_schema(InvoiceExtraction))
+            messages = [{**messages[0], "content": messages[0]["content"] + "\nJSON schema: " + schema_hint}, *messages[1:]]
+            resp = self.client.chat.completions.create(
+                model=self.model, messages=messages, response_format=self.response_format, temperature=0
+            )
         usage = resp.usage.prompt_tokens if resp.usage else None
         return LLMResponse(content=resp.choices[0].message.content or "", prompt_tokens=usage)
 
@@ -253,7 +268,9 @@ class SchemaExtractor:
             else:
                 stage = "reflection"
                 self.sleep(self.backoff_base * 2 ** (attempt - 2))  # 0.5s, 1s, 2s ...
-                user_prompt = build_reflection_prompt(document, last_output, last_errors)
+                if last_errors and last_errors[0]["loc"] != "<api>":
+                    user_prompt = build_reflection_prompt(document, last_output, last_errors)
+                # else: the API call itself failed (timeout, rate limit) -> retry the same prompt
 
             messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_prompt}]
             log = AttemptLog(attempt=attempt, stage=stage, prompt_sent=user_prompt, prompt_chars=len(user_prompt))

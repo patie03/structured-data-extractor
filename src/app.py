@@ -35,7 +35,7 @@ def _load_cloud_secrets() -> None:
     """On Streamlit Cloud, keys live in the secret manager, not in a .env file."""
     try:
         for name in ("OPENAI_API_KEY", "OPENAI_MODEL"):
-            if name in st.secrets and not os.getenv(name):
+            if name in st.secrets:  # secrets win, so an updated key takes effect
                 os.environ[name] = st.secrets[name]
     except Exception:  # no secrets.toml locally: .env is used instead
         pass
