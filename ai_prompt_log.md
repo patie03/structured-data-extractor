@@ -95,6 +95,11 @@ Following the prompt literally produces the problems below. I checked each one a
 - **Why it matters:** each hidden error can cost one extra LLM call. That is why `max_retries` is 3 and not 1.
 - **Possible improvement:** run the math check on the raw numbers too (the UI's `reconciliation_report()` already does this), and add those issues to the first reflection prompt.
 
+### Finding 7 (found while deploying): bugs that only showed up in the cloud
+1. **The old API key stayed in memory.** The app copied the key from Streamlit Secrets only `if not os.getenv(name)`. After I fixed the key in Secrets, the old wrong key was still loaded, so I kept getting `401 invalid_api_key`. **Fix:** Secrets always win.
+2. **A hidden space at the end of the key.** My `.env` had a space after the key. Locally `python-dotenv` strips it; in Streamlit Secrets it stayed inside the quotes and broke the key. **Fix:** `.strip()` the key before use.
+3. **Reflection on API errors makes no sense.** With a bad key there is no JSON to fix, but the app still sent a "fix your JSON" prompt. **Fix:** on `<api>` errors, retry the same prompt with backoff instead of reflecting.
+
 ### Check: Pydantic v1 vs v2 syntax
 - I searched the code for `@validator`, `@root_validator`, `.dict()`, `.parse_obj()` and `class Config`. There are none. Everything uses v2: `@field_validator`, `@model_validator(mode="after")`, `model_validate`, `model_dump(mode="json")` and `ConfigDict`.
 
