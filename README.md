@@ -2,8 +2,8 @@
 
 A fault-tolerant pipeline that turns **messy PDF and HTML invoices** into **strictly validated Pydantic v2 records**. When the LLM gets something wrong, the pipeline corrects itself with a reflection loop. When it can't be fixed, it routes the document to a **dead-letter queue** instead of crashing or saving bad data.
 
-- **Live demo:** _add your Streamlit URL here_
-- **Video walkthrough:** _add your YouTube link here_
+- **Live demo:** https://patience-invoice-extractor.streamlit.app
+- **Video walkthrough:** https://youtu.be/r8RoRYtuJnA
 
 ## System architecture & data flow
 
